@@ -1,0 +1,1971 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>OneYear Jahreskalender 2026</title>
+
+  <!-- iOS App Icons -->
+  <link rel="apple-touch-icon" href="oneyear_ios_glow_12dots.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="oneyear_ios_glow_12dots.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="oneyear_ios_glow_12dots.png">
+  <link rel="apple-touch-icon" sizes="167x167" href="oneyear_ios_glow_12dots.png">
+
+  <!-- Webapp Metadaten -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="OneYear">
+
+  <!-- React / Tailwind / Babel -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Firebase (compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
+  <!-- Minimales Favicon -->
+  <link rel="icon" href="data:;base64,iVBORw0KGgo="/>
+
+  <style>
+    @media print {
+      /* A1 Landscape mit Standard-Drucker-Rändern */
+      @page { 
+        size: A1 landscape; 
+        margin: 8mm;
+      }
+      
+      /* Body Einstellungen */
+      body { 
+        margin: 0 !important; 
+        padding: 0 !important;
+        print-color-adjust: exact !important;
+        -webkit-print-color-adjust: exact !important;
+      }
+      
+      /* Unerwünschte Elemente verstecken */
+      button:not(.print-keep),
+      details,
+      summary,
+      .compact-calendar,
+      .text-center.mt-4,
+      nav,
+      .fixed { 
+        display: none !important; 
+      }
+      
+      /* Container aufräumen */
+      .min-h-screen { 
+        min-height: auto !important; 
+        padding: 0 !important; 
+      }
+      
+      /* Titel sichtbar und formatiert */
+      h1 { 
+        display: block !important; 
+        font-size: 20px !important;
+        font-weight: bold !important;
+        margin: 0 0 10px 0 !important;
+        padding: 0 !important;
+        text-align: center !important;
+        color: #1F2937 !important;
+      }
+      
+      /* Kalender-Container */
+      .bg-white { 
+        box-shadow: none !important;
+        border-radius: 0 !important;
+      }
+      
+      /* Kalender Tabelle */
+      table { 
+        width: 100% !important;
+        border-collapse: collapse !important;
+        margin: 0 !important;
+        page-break-inside: avoid !important;
+      }
+      
+      /* Monatsnamen */
+      th {
+        background: #374151 !important;
+        color: white !important;
+        font-weight: bold !important;
+        text-align: center !important;
+        padding: 4px !important;
+        font-size: 11px !important;
+        print-color-adjust: exact !important;
+        -webkit-print-color-adjust: exact !important;
+      }
+      
+      /* Tabellenzellen */
+      td { 
+        border: 1px solid #9CA3AF !important;
+        padding: 2px 4px !important;
+        font-size: 9px !important;
+        vertical-align: top !important;
+        print-color-adjust: exact !important;
+        -webkit-print-color-adjust: exact !important;
+      }
+      
+      /* Event-Text */
+      .text-xs { font-size: 7px !important; }
+      .font-semibold { font-weight: 600 !important; }
+      
+      /* Farben in Zellen erhalten */
+      td[style*="background"],
+      div[style*="background"] { 
+        print-color-adjust: exact !important; 
+        -webkit-print-color-adjust: exact !important; 
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    // ---------- Firebase ----------
+    const firebaseConfig = {
+      apiKey: "AIzaSyBvUXVVg_XZQNOENJC6o_wK0DE5YK_Uye4",
+      authDomain: "oneyear-jahreskalender.firebaseapp.com",
+      databaseURL: "https://oneyear-jahreskalender-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "oneyear-jahreskalender",
+      storageBucket: "oneyear-jahreskalender.firebasestorage.app",
+      messagingSenderId: "900742196191",
+      appId: "1:900742196191:web:a9b05cc35d10fcc1b3726a"
+    };
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    // ---------- Icons ----------
+    const Plus = ({ className }) => (
+      <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line>
+      </svg>
+    );
+    const Trash2 = ({ className }) => (
+      <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="3 6 5 6 21 6"></polyline>
+        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+        <line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line>
+      </svg>
+    );
+    const Edit = ({ className }) => (
+      <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+      </svg>
+    );
+    const X = ({ className }) => (
+      <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    );
+
+    // ---------- Utils ----------
+    // Entfernt nur Event-Type-Emojis am Anfang, lässt User-Emojis intakt
+    const stripEventTypeEmoji = (text) => {
+      const eventTypeEmojis = ['🏞️', '💼', '🎨', '📚', '🩺', '👩🏻', '👨🏼', '🐻', '⭐', '⛱️', '🆓', '🏆', '🎵', '🎭', '🎪', '🎬', '🚂', '🏰', '🎡', '🌳', '💒', '🍰', '🎂'];
+      let cleaned = text;
+      // Entferne nur Event-Type-Emojis am Anfang (mit optionalem Leerzeichen)
+      for (const emoji of eventTypeEmojis) {
+        if (cleaned.startsWith(emoji)) {
+          cleaned = cleaned.substring(emoji.length).trim();
+          break; // Nur das erste Emoji entfernen
+        }
+      }
+      return cleaned;
+    };
+    
+    // Legacy Support: stripEmoji zeigt auf neue Funktion
+    const stripEmoji = stripEventTypeEmoji;
+
+    const getContrastColor = (hex) => {
+      const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+      const L = (0.299*r + 0.587*g + 0.114*b) / 255;
+      return L > 0.5 ? '#374151' : '#FFFFFF';
+    };
+
+    const nextDateISO = (yyyyMmDd) => {
+      const d = new Date(yyyyMmDd);
+      d.setDate(d.getDate() + 1);
+      return d.toISOString().slice(0,10);
+    };
+
+    // ---------- Main Component ----------
+    const FamilyYearCalendar = () => {
+      const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
+      const [events, setEvents] = useState([]);
+      const [loading, setLoading] = useState(true);
+
+      const [showAddEvent, setShowAddEvent] = useState(false);
+      const [showAddBirthday, setShowAddBirthday] = useState(false);
+      const [editingEvent, setEditingEvent] = useState(null);
+
+      const [showDayEvents, setShowDayEvents] = useState(null);
+      const [showEventDetail, setShowEventDetail] = useState(null);
+
+      const [showHolidayDialog, setShowHolidayDialog] = useState(false);
+      const [showVacationDialog, setShowVacationDialog] = useState(false);
+      const [showMoreMenu, setShowMoreMenu] = useState(false);
+      const [selectedBundesland, setSelectedBundesland] = useState('Berlin');
+      const [canUndo, setCanUndo] = useState(false);
+      const [currentTime, setCurrentTime] = useState('');
+      const [isCompactView, setIsCompactView] = useState(false);
+      
+      // User Management
+      const [currentUser, setCurrentUser] = useState(null);
+      const [showUserSelection, setShowUserSelection] = useState(false);
+      const [isViewOnly, setIsViewOnly] = useState(false);
+      
+      // Drag-to-Select
+      const [isDragging, setIsDragging] = useState(false);
+      const [dragStartDate, setDragStartDate] = useState(null);
+      const [dragEndDate, setDragEndDate] = useState(null);
+
+      // Export-Dialog nach Erstellen
+      const [exportEvent, setExportEvent] = useState(null);
+
+      const [newEvent, setNewEvent] = useState({
+        title: '', startDate: '2026-01-01', endDate: '2026-01-01',
+        color: '#FFE680', type: 'urlaub', notes: '',
+        startTime: '', endTime: ''
+      });
+      const [newBirthday, setNewBirthday] = useState({
+        firstName: '', lastName: '', birthDate: '1990-01-01', info: ''
+      });
+
+      const eventTypes = {
+        urlaub:    { label:'Urlaub',    color:'#FFE680', emoji:'🏞️' },
+        work:      { label:'Arbeit',    color:'#87C4A3', emoji:'💼' },
+        kita:      { label:'Kita',      color:'#FFC0CB', emoji:'🎨' },
+        schule:    { label:'Schule',    color:'#FFE66D', emoji:'📚' },
+        arzttermin:{ label:'Arzttermin',color:'#87CEEB', emoji:'🩺' },
+        mamazeit:  { label:'Mama-Zeit', color:'#FF69B4', emoji:'👩🏻', hasStripe:true },
+        papazeit:  { label:'Papa-Zeit', color:'#4A90E2', emoji:'👨🏼', hasStripe:true },
+        besuch:    { label:'Besuch',    color:'#FFB6A3', emoji:'🐻' },
+        event:     { label:'Ereignis',  color:'#C7B3FF', emoji:'⭐' },
+        vacation:  { label:'Ferien',    color:'#B8E6D5', emoji:'⛱️', hidden:true },
+        holiday:   { label:'Feiertag',  color:'#FFD4B8', emoji:'🆓', hidden:true },
+        sportevent:{ label:'Sportereignis', color:'#C7B3FF', emoji:'🏆' },
+        konzert:   { label:'Konzert',   color:'#C7B3FF', emoji:'🎵' },
+        theater:   { label:'Theater/Musical', color:'#C7B3FF', emoji:'🎭' },
+        zirkus:    { label:'Zirkus/Show', color:'#C7B3FF', emoji:'🎪' },
+        kino:      { label:'Kino',      color:'#C7B3FF', emoji:'🎬' },
+        ausflug:   { label:'Ausflug',   color:'#C7B3FF', emoji:'🚂' },
+        museum:    { label:'Museum',    color:'#C7B3FF', emoji:'🏰' },
+        freizeitpark:{ label:'Freizeitpark', color:'#C7B3FF', emoji:'🎡' },
+        zoo:       { label:'Zoo/Tierpark', color:'#C7B3FF', emoji:'🌳' },
+        hochzeit:  { label:'Hochzeit',  color:'#C7B3FF', emoji:'💒' },
+        einladung: { label:'Einladung', color:'#C7B3FF', emoji:'🍰' },
+        misc:      { label:'Sonstiges', color:'#C7B3FF', emoji:'' }
+      };
+
+      const calculateAge = (birthDate, year) => year - new Date(birthDate).getFullYear();
+
+      const bundeslaender = ['Baden-Württemberg','Bayern','Berlin','Brandenburg','Bremen','Hamburg','Hessen','Mecklenburg-Vorpommern','Niedersachsen','Nordrhein-Westfalen','Rheinland-Pfalz','Saarland','Sachsen','Sachsen-Anhalt','Schleswig-Holstein','Thüringen'];
+
+      // Feiertage (mit 🆓 im Titel)
+      const getHolidaysForYear = (year, bundesland) => {
+        const base = [
+          { title:'Neujahr', month:1, day:1 },
+          { title:'Tag der Arbeit', month:5, day:1 },
+          { title:'Tag der Deutschen Einheit', month:10, day:3 },
+          { title:'1. Weihnachtstag', month:12, day:25 },
+          { title:'2. Weihnachtstag', month:12, day:26 }
+        ];
+        if (bundesland === 'Berlin') base.push({ title:'Internationaler Frauentag', month:3, day:8 });
+
+        if (year === 2026) base.push(
+          { title:'Karfreitag', month:4, day:3 },
+          { title:'Ostermontag', month:4, day:6 },
+          { title:'Christi Himmelfahrt', month:5, day:14 },
+          { title:'Pfingstmontag', month:5, day:25 }
+        );
+        if (year === 2027) base.push(
+          { title:'Karfreitag', month:3, day:26 },
+          { title:'Ostermontag', month:3, day:29 },
+          { title:'Christi Himmelfahrt', month:5, day:6 },
+          { title:'Pfingstmontag', month:5, day:17 }
+        );
+        if (year === 2028) base.push(
+          { title:'Karfreitag', month:4, day:14 },
+          { title:'Ostermontag', month:4, day:17 },
+          { title:'Christi Himmelfahrt', month:5, day:25 },
+          { title:'Pfingstmontag', month:6, day:5 }
+        );
+
+        return base.map(h => ({
+          title: `🆓 ${h.title}`,
+          startDate: `${year}-${String(h.month).padStart(2,'0')}-${String(h.day).padStart(2,'0')}`,
+          endDate: `${year}-${String(h.month).padStart(2,'0')}-${String(h.day).padStart(2,'0')}`,
+          color:'#FFD4B8', type:'holiday'
+        }));
+      };
+
+      const getVacationsForYear = (year, bundesland) => {
+        if (bundesland !== 'Berlin') return [];
+        let vacations = [];
+        if (year === 2025) vacations = [
+          { title:'Winterferien', startDate:'2025-02-03', endDate:'2025-02-08' },
+          { title:'Osterferien', startDate:'2025-04-14', endDate:'2025-04-25' },
+          { title:'Himmelfahrt (unterrichtsfrei/Brückentag)', startDate:'2025-05-30', endDate:'2025-05-30' },
+          { title:'Pfingstferien', startDate:'2025-06-10', endDate:'2025-06-10' },
+          { title:'Sommerferien', startDate:'2025-07-24', endDate:'2025-09-06' },
+          { title:'Herbstferien', startDate:'2025-10-20', endDate:'2025-11-01' },
+          { title:'Weihnachtsferien', startDate:'2025-12-22', endDate:'2026-01-02' }
+        ];
+        if (year === 2026) vacations = [
+          { title:'Winterferien', startDate:'2026-02-02', endDate:'2026-02-07' },
+          { title:'Osterferien', startDate:'2026-03-30', endDate:'2026-04-10' },
+          { title:'Himmelfahrt (unterrichtsfrei/Brückentag)', startDate:'2026-05-15', endDate:'2026-05-15' },
+          { title:'Pfingstferien', startDate:'2026-05-26', endDate:'2026-05-26' },
+          { title:'Sommerferien', startDate:'2026-07-09', endDate:'2026-08-22' },
+          { title:'Herbstferien', startDate:'2026-10-20', endDate:'2026-11-01' },
+          { title:'Weihnachtsferien', startDate:'2026-12-23', endDate:'2027-01-02' }
+        ];
+        if (year === 2027) vacations = [
+          { title:'Winterferien', startDate:'2027-02-01', endDate:'2027-02-06' },
+          { title:'Osterferien', startDate:'2027-03-29', endDate:'2027-04-10' },
+          { title:'Sommerferien', startDate:'2027-07-08', endDate:'2027-08-20' },
+          { title:'Herbstferien', startDate:'2027-10-11', endDate:'2027-10-23' },
+          { title:'Weihnachtsferien', startDate:'2027-12-23', endDate:'2027-12-31' }
+        ];
+        if (year === 2028) vacations = [
+          { title:'Winterferien', startDate:'2028-01-31', endDate:'2028-02-05' },
+          { title:'Osterferien', startDate:'2028-04-17', endDate:'2028-04-28' },
+          { title:'Sommerferien', startDate:'2028-07-20', endDate:'2028-09-01' },
+          { title:'Herbstferien', startDate:'2028-10-23', endDate:'2028-11-04' },
+          { title:'Weihnachtsferien', startDate:'2028-12-21', endDate:'2028-12-31' }
+        ];
+        return vacations.map(v => ({ ...v, title: `⛱️ ${v.title}` }));
+      };
+
+      const months = [
+        { name:'Jan', fullName:'Januar', days:31 },{ name:'Feb', fullName:'Februar', days:28 },
+        { name:'Mär', fullName:'März', days:31 },{ name:'Apr', fullName:'April', days:30 },
+        { name:'Mai', fullName:'Mai', days:31 },{ name:'Jun', fullName:'Juni', days:30 },
+        { name:'Jul', fullName:'Juli', days:31 },{ name:'Aug', fullName:'August', days:31 },
+        { name:'Sep', fullName:'September', days:30 },{ name:'Okt', fullName:'Oktober', days:31 },
+        { name:'Nov', fullName:'November', days:30 },{ name:'Dez', fullName:'Dezember', days:31 }
+      ];
+
+      const berlinEvents = [];
+      const familyBirthdays = [];
+
+      // Daten laden
+      useEffect(() => { loadEvents(); }, [currentYear]);
+      
+      // User aus localStorage laden
+      useEffect(() => {
+        const savedUser = localStorage.getItem('oneyear_current_user');
+        const savedViewOnly = localStorage.getItem('oneyear_view_only') === 'true';
+        
+        if (savedUser) {
+          setCurrentUser(savedUser);
+          setIsViewOnly(savedViewOnly);
+        } else {
+          setShowUserSelection(true);
+        }
+      }, []);
+
+      const loadEvents = () => {
+        const eventsRef = database.ref(`events/${currentYear}`);
+        eventsRef.on('value', (snapshot) => {
+          const data = snapshot.val();
+          if (data) {
+            const loaded = Object.entries(data).map(([key, val]) => ({ ...val, firebaseKey: key }));
+            setEvents([...berlinEvents, ...familyBirthdays, ...loaded]);
+          } else {
+            setEvents([...berlinEvents, ...familyBirthdays]);
+          }
+          setLoading(false);
+        });
+      };
+
+      // ---------- Export Helpers (all-day) ----------
+      // ICS: DTEND exklusiv -> +1 Tag
+      const downloadIcs = (ev) => {
+        const title = stripEmoji(ev.title);
+        const hasTime = ev.startTime && ev.endTime;
+        const startTime = ev.startTime || '09:00';
+        const endTime = ev.endTime || '10:00';
+        
+        let dtstart, dtend;
+        if (hasTime || (!hasTime && ev.startDate === ev.endDate)) {
+          // Mit Uhrzeit oder Einzeltag -> immer mit Zeit exportieren
+          const startDateTime = `${ev.startDate}T${startTime}:00`;
+          const endDateTime = `${ev.endDate}T${endTime}:00`;
+          dtstart = `DTSTART:${startDateTime.replace(/[-:]/g, '')}`;
+          dtend = `DTEND:${endDateTime.replace(/[-:]/g, '')}`;
+        } else {
+          // Mehrtägig ohne Zeit -> ganztägig
+          const s = ev.startDate.replace(/-/g,'');
+          const eExclusive = nextDateISO(ev.endDate).replace(/-/g,'');
+          dtstart = `DTSTART;VALUE=DATE:${s}`;
+          dtend = `DTEND;VALUE=DATE:${eExclusive}`;
+        }
+        
+        const ics = [
+          'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//OneYear Kalender//DE','CALSCALE:GREGORIAN','METHOD:PUBLISH',
+          'BEGIN:VEVENT',
+          dtstart,
+          dtend,
+          `SUMMARY:${title}`,
+          ev.notes ? `DESCRIPTION:${(ev.notes || '').replace(/\r?\n/g, '\\n')}` : '',
+          'END:VEVENT','END:VCALENDAR'
+        ].filter(Boolean).join('\r\n');
+        const blob = new Blob([ics], { type:'text/calendar' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = `${title.replace(/[^a-z0-9]/gi,'_')}.ics`;
+        a.click(); URL.revokeObjectURL(url);
+      };
+
+      // Google: all-day mit EXKLUSIVEM End-Datum -> +1 Tag, oder mit Zeit
+      const openGoogle = (ev) => {
+        const text = encodeURIComponent(stripEmoji(ev.title));
+        const hasTime = ev.startTime && ev.endTime;
+        const startTime = ev.startTime || '09:00';
+        const endTime = ev.endTime || '10:00';
+        const details = encodeURIComponent(ev.notes || '');
+        
+        let dates;
+        if (hasTime || (!hasTime && ev.startDate === ev.endDate)) {
+          // Mit Uhrzeit oder Einzeltag -> mit Zeit
+          const startDateTime = `${ev.startDate}T${startTime}:00`.replace(/[-:]/g, '');
+          const endDateTime = `${ev.endDate}T${endTime}:00`.replace(/[-:]/g, '');
+          dates = `${startDateTime}/${endDateTime}`;
+        } else {
+          // Mehrtägig ohne Zeit -> ganztägig
+          const s = ev.startDate.replace(/-/g,'');
+          const eExclusive = nextDateISO(ev.endDate).replace(/-/g,'');
+          dates = `${s}/${eExclusive}`;
+        }
+        
+        const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${dates}&details=${details}`;
+        window.open(url, '_blank');
+      };
+
+      // Outlook.com
+      const openOutlook = (ev) => {
+        const sub = encodeURIComponent(stripEmoji(ev.title));
+        const body = encodeURIComponent(ev.notes || '');
+        const hasTime = ev.startTime && ev.endTime;
+        const startTime = ev.startTime || '09:00';
+        const endTime = ev.endTime || '10:00';
+        
+        let url;
+        if (hasTime || (!hasTime && ev.startDate === ev.endDate)) {
+          // Mit Uhrzeit oder Einzeltag -> mit Zeit
+          const startdt = `${ev.startDate}T${startTime}:00`;
+          const enddt = `${ev.endDate}T${endTime}:00`;
+          url = `https://outlook.live.com/calendar/0/deeplink/compose?subject=${sub}&body=${body}&startdt=${startdt}&enddt=${enddt}`;
+        } else {
+          // Mehrtägig ohne Zeit -> ganztägig
+          const startdt = ev.startDate;
+          const enddt = nextDateISO(ev.endDate);
+          url = `https://outlook.live.com/calendar/0/deeplink/compose?allday=true&subject=${sub}&body=${body}&startdt=${startdt}&enddt=${enddt}`;
+        }
+        
+        window.open(url, '_blank');
+      };
+
+      const saveEvent = (event) => {
+        const eventsRef = database.ref(`events/${currentYear}`);
+        const now = new Date().toISOString();
+        
+        if (event.firebaseKey) {
+          // Event wird bearbeitet
+          const updatedEvent = {
+            ...event,
+            editedBy: currentUser || 'Unbekannt',
+            editedAt: now
+          };
+          eventsRef.child(event.firebaseKey).set(updatedEvent);
+        } else {
+          // Neues Event
+          const newEvent = {
+            ...event,
+            createdBy: currentUser || 'Unbekannt',
+            createdAt: now
+          };
+          eventsRef.push(newEvent);
+        }
+      };
+
+      // ---------- Undo-System ----------
+      const saveToHistory = () => {
+        try {
+          const userEvents = events.filter(e => e.firebaseKey && e.type !== 'holiday' && e.type !== 'vacation');
+          const history = JSON.parse(localStorage.getItem(`oneyear_undo_${currentYear}`) || '[]');
+          history.push(userEvents);
+          if (history.length > 20) history.shift();
+          localStorage.setItem(`oneyear_undo_${currentYear}`, JSON.stringify(history));
+          setCanUndo(history.length > 0);
+        } catch (err) {
+          console.error('Undo-History speichern fehlgeschlagen:', err);
+        }
+      };
+
+      const performUndo = async () => {
+        try {
+          const history = JSON.parse(localStorage.getItem(`oneyear_undo_${currentYear}`) || '[]');
+          if (history.length === 0) {
+            alert('Nichts zum Rückgängig machen.');
+            return;
+          }
+
+          const previousState = history.pop();
+          localStorage.setItem(`oneyear_undo_${currentYear}`, JSON.stringify(history));
+          setCanUndo(history.length > 0);
+
+          // Firebase komplett für User-Events löschen und neu schreiben
+          const ref = database.ref(`events/${currentYear}`);
+          const snap = await ref.get();
+          
+          // Alle nicht-System-Events löschen
+          if (snap.val()) {
+            const updates = {};
+            snap.forEach(child => {
+              const val = child.val();
+              if (val && val.type !== 'holiday' && val.type !== 'vacation') {
+                updates[child.key] = null;
+              }
+            });
+            await ref.update(updates);
+          }
+
+          // Vorherigen State wiederherstellen
+          previousState.forEach(event => {
+            const { firebaseKey, ...data } = event;
+            ref.push(data);
+          });
+
+          alert('Letzte Änderung rückgängig gemacht!');
+        } catch (err) {
+          console.error('Undo fehlgeschlagen:', err);
+          alert('Undo fehlgeschlagen. Bitte versuche es erneut.');
+        }
+      };
+
+      // Check ob History vorhanden beim Laden
+      useEffect(() => {
+        try {
+          const history = JSON.parse(localStorage.getItem(`oneyear_undo_${currentYear}`) || '[]');
+          setCanUndo(history.length > 0);
+        } catch (err) {
+          console.error('Undo-History laden fehlgeschlagen:', err);
+        }
+      }, [currentYear]);
+
+      // ---------- Drag-to-Select Helpers ----------
+      const handleMouseDown = (dateKey) => {
+        if (isViewOnly) return; // Kein Drag im View-Only Modus
+        setIsDragging(true);
+        setDragStartDate(dateKey);
+        setDragEndDate(dateKey);
+      };
+
+      const handleMouseEnter = (dateKey) => {
+        if (isDragging) {
+          setDragEndDate(dateKey);
+        }
+      };
+
+      const handleMouseUp = () => {
+        if (!isDragging) return;
+        
+        setIsDragging(false);
+        
+        // Wenn Start = End → normal click (Details anzeigen)
+        // Wenn Start ≠ End → Event erstellen
+        if (dragStartDate && dragEndDate && dragStartDate !== dragEndDate) {
+          // Multi-Day Selection → Event erstellen
+          const [startDate, endDate] = dragStartDate <= dragEndDate 
+            ? [dragStartDate, dragEndDate]
+            : [dragEndDate, dragStartDate]; // Rückwärts-Drag
+          
+          setNewEvent({
+            title: '',
+            startDate: startDate,
+            endDate: endDate,
+            color: '#FFE680',
+            type: 'urlaub',
+            notes: '',
+            startTime: '',
+            endTime: ''
+          });
+          setShowAddEvent(true);
+          setShowAddBirthday(false);
+          setEditingEvent(null);
+        }
+        
+        // Reset Drag
+        setDragStartDate(null);
+        setDragEndDate(null);
+      };
+
+      const isDateInDragRange = (dateKey) => {
+        if (!isDragging || !dragStartDate || !dragEndDate) return false;
+        const start = dragStartDate <= dragEndDate ? dragStartDate : dragEndDate;
+        const end = dragStartDate <= dragEndDate ? dragEndDate : dragStartDate;
+        return dateKey >= start && dateKey <= end;
+      };
+
+      // Digitaluhr (aktualisiert jede Minute)
+      useEffect(() => {
+        const updateTime = () => {
+          const now = new Date();
+          const hours = String(now.getHours()).padStart(2, '0');
+          const minutes = String(now.getMinutes()).padStart(2, '0');
+          setCurrentTime(`${hours}:${minutes}`);
+        };
+        
+        updateTime(); // Sofort beim Laden
+        const interval = setInterval(updateTime, 60000); // Jede Minute
+        return () => clearInterval(interval);
+      }, []);
+
+      // Global MouseUp Handler (falls User außerhalb der Tabelle loslässt)
+      useEffect(() => {
+        const handleGlobalMouseUp = () => {
+          if (isDragging) {
+            handleMouseUp();
+          }
+        };
+        
+        document.addEventListener('mouseup', handleGlobalMouseUp);
+        return () => document.removeEventListener('mouseup', handleGlobalMouseUp);
+      }, [isDragging, dragStartDate, dragEndDate]);
+
+      // Auto-Scroll zum aktuellen Monat
+      useEffect(() => {
+        // Nur beim aktuellen Jahr
+        if (currentYear === new Date().getFullYear()) {
+          // Länger warten für iOS Safari
+          setTimeout(() => {
+            const currentMonth = new Date().getMonth();
+            const monthElement = document.getElementById(`month-${currentMonth}`);
+            const scrollContainer = document.querySelector('.bg-white.rounded-lg.shadow-md.p-2.overflow-x-auto');
+            
+            if (monthElement && scrollContainer) {
+              // Berechne die Scroll-Position
+              const monthOffsetLeft = monthElement.offsetLeft;
+              const containerWidth = scrollContainer.offsetWidth;
+              const monthWidth = monthElement.offsetWidth;
+              
+              // Zentriere den Monat
+              const scrollPosition = monthOffsetLeft - (containerWidth / 2) + (monthWidth / 2);
+              
+              // iOS-freundliches Scrollen
+              scrollContainer.scrollLeft = Math.max(0, scrollPosition);
+            }
+          }, 1000);
+        }
+      }, [currentYear]);
+
+      // ---------- Geburtstage Import ----------
+      const importBirthdaysFromLastYear = async () => {
+        const lastYear = currentYear - 1;
+        
+        try {
+          const ref = database.ref(`events/${lastYear}`);
+          const snap = await ref.get();
+          
+          if (!snap.val()) {
+            alert(`Keine Daten aus ${lastYear} gefunden.`);
+            return;
+          }
+          
+          const birthdays = [];
+          snap.forEach(child => {
+            const event = child.val();
+            if (event && event.type === 'birthday' && event.birthDate) {
+              birthdays.push(event);
+            }
+          });
+          
+          if (birthdays.length === 0) {
+            alert(`Keine Geburtstage in ${lastYear} gefunden.`);
+            return;
+          }
+
+          // Prüfen ob Geburtstage bereits existieren (Duplikate vermeiden)
+          const existingBirthdays = events.filter(e => e.type === 'birthday');
+          const newBirthdays = birthdays.filter(oldBday => {
+            return !existingBirthdays.some(existing => 
+              existing.firstName === oldBday.firstName && 
+              existing.birthDate === oldBday.birthDate
+            );
+          });
+
+          if (newBirthdays.length === 0) {
+            alert(`Alle Geburtstage aus ${lastYear} sind bereits vorhanden.`);
+            return;
+          }
+
+          saveToHistory(); // Snapshot vor Import
+
+          // Transformieren und speichern
+          newBirthdays.forEach(birthday => {
+            const d = new Date(birthday.birthDate);
+            const eventDate = `${currentYear}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+            const age = calculateAge(birthday.birthDate, currentYear);
+            
+            const newBirthday = {
+              title: `🎂 ${birthday.firstName} (${age})`,
+              firstName: birthday.firstName,
+              lastName: birthday.lastName || '',
+              birthDate: birthday.birthDate,
+              info: birthday.info || '',
+              startDate: eventDate,
+              endDate: eventDate,
+              color: '#FF69B4',
+              type: 'birthday',
+              id: Date.now() + Math.random()
+            };
+            
+            saveEvent(newBirthday);
+          });
+          
+          setShowMoreMenu(false);
+          alert(`${newBirthdays.length} Geburtstage aus ${lastYear} erfolgreich übertragen!`);
+        } catch (err) {
+          console.error('Geburtstage-Import fehlgeschlagen:', err);
+          alert('Fehler beim Importieren der Geburtstage. Bitte versuche es erneut.');
+        }
+      };
+
+      // ---------- CRUD ----------
+      const addEvent = () => {
+        if (!newEvent.title || !newEvent.startDate) return;
+        saveToHistory(); // Snapshot vor Änderung
+        const emoji = eventTypes[newEvent.type]?.emoji || '';
+        const cleanTitle = newEvent.title.trim();
+        const event = {
+          ...newEvent,
+          title: `${emoji} ${cleanTitle}`.trim(),
+          id: Date.now(),
+          endDate: newEvent.endDate || newEvent.startDate
+        };
+        saveEvent(event);
+        setNewEvent({ title:'', startDate:`${currentYear}-01-01`, endDate:`${currentYear}-01-01`, color:'#FFE680', type:'urlaub', notes:'' });
+        setShowAddEvent(false);
+        setExportEvent(event);
+      };
+
+      const addBirthday = () => {
+        if (!newBirthday.firstName || !newBirthday.birthDate) return;
+        saveToHistory(); // Snapshot vor Änderung
+        const age = calculateAge(newBirthday.birthDate, currentYear);
+        const d = new Date(newBirthday.birthDate);
+        const eventDate = `${currentYear}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        const ev = {
+          title: `🎂 ${newBirthday.firstName} (${age})`,
+          firstName: newBirthday.firstName,
+          lastName: newBirthday.lastName,
+          birthDate: newBirthday.birthDate,
+          info: newBirthday.info,
+          startDate: eventDate,
+          endDate: eventDate,
+          color: '#FF69B4',
+          type: 'birthday',
+          id: Date.now()
+        };
+        saveEvent(ev);
+        setNewBirthday({ firstName:'', lastName:'', birthDate:'1990-01-01', info:'' });
+        setShowAddBirthday(false);
+        setExportEvent(ev);
+      };
+
+      const startEditEvent = (event) => {
+        if (event.type === 'holiday' || event.type === 'vacation') {
+          alert('Feiertage und Ferien sind Systemtermine und nicht bearbeitbar.');
+          return;
+        }
+        setEditingEvent(event);
+        if (event.type === 'birthday') {
+          setNewBirthday({
+            firstName: event.firstName || '',
+            lastName: event.lastName || '',
+            birthDate: event.birthDate || '1990-01-01',
+            info: event.info || ''
+          });
+          setShowAddBirthday(true);
+          setShowAddEvent(false);
+        } else {
+          setNewEvent({
+            title: stripEmoji(event.title), // Nur Text, ohne Event-Type-Emoji
+            startDate: event.startDate,
+            endDate: event.endDate,
+            color: event.color,
+            type: event.type,
+            notes: event.notes || '',
+            startTime: event.startTime || '',
+            endTime: event.endTime || ''
+          });
+          setShowAddEvent(true);
+          setShowAddBirthday(false);
+        }
+      };
+
+      const updateEvent = () => {
+        if (!editingEvent) return;
+        if (editingEvent.type === 'birthday') return updateBirthday();
+
+        saveToHistory(); // Snapshot vor Änderung
+        const emoji = eventTypes[newEvent.type]?.emoji || '';
+        const cleanTitle = stripEmoji(newEvent.title.trim()).replace(/\s+/g, ' ');
+        const updated = {
+          ...editingEvent,
+          ...newEvent,
+          title: `${emoji} ${cleanTitle}`.trim(),
+          endDate: newEvent.endDate || newEvent.startDate
+        };
+        saveEvent(updated);
+        setEditingEvent(null);
+        setShowAddEvent(false);
+        setNewEvent({ title:'', startDate:`${currentYear}-01-01`, endDate:`${currentYear}-01-01`, color:'#FFE680', type:'urlaub', notes:'' });
+      };
+
+      const updateBirthday = () => {
+        if (!editingEvent) return;
+        saveToHistory(); // Snapshot vor Änderung
+        const d = new Date(newBirthday.birthDate);
+        const eventDate = `${currentYear}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        const age = calculateAge(newBirthday.birthDate, currentYear);
+        const updated = {
+          ...editingEvent,
+          title: `🎂 ${newBirthday.firstName} (${age})`,
+          firstName:newBirthday.firstName, lastName:newBirthday.lastName,
+          birthDate:newBirthday.birthDate, info:newBirthday.info,
+          startDate:eventDate, endDate:eventDate
+        };
+        saveEvent(updated);
+        setEditingEvent(null);
+        setShowAddBirthday(false);
+        setNewBirthday({ firstName:'', lastName:'', birthDate:'1990-01-01', info:'' });
+      };
+
+      const cancelEdit = () => {
+        setEditingEvent(null);
+        setShowAddEvent(false);
+        setShowAddBirthday(false);
+        setNewEvent({ title:'', startDate:`${currentYear}-01-01`, endDate:`${currentYear}-01-01`, color:'#FFE680', type:'urlaub', notes:'', startTime:'', endTime:'' });
+        setNewBirthday({ firstName:'', lastName:'', birthDate:'1990-01-01', info:'' });
+      };
+
+      const deleteEvent = (event) => {
+        saveToHistory(); // Snapshot vor Änderung
+        if (event.firebaseKey) {
+          database.ref(`events/${currentYear}/${event.firebaseKey}`).remove();
+          setEvents(prev => prev.filter(e => e.firebaseKey !== event.firebaseKey));
+        }
+      };
+
+      
+      // Entfernen-Funktionen für Feiertage/Ferien (auch mit Firebase)
+      const removeHolidays = async () => {
+        try {
+          const ref = database.ref(`events/${currentYear}`);
+          const snap = await ref.get();
+          if (snap && snap.val()) {
+            const updates = {};
+            snap.forEach(ch => { const v = ch.val(); if (v && v.type === 'holiday') updates[ch.key] = null; });
+            if (Object.keys(updates).length) await ref.update(updates);
+          }
+          setEvents(prev => prev.filter(e => e.type !== 'holiday'));
+        } finally {
+          setShowHolidayDialog(false);
+        }
+      };
+
+      const removeVacations = async () => {
+        try {
+          const ref = database.ref(`events/${currentYear}`);
+          const snap = await ref.get();
+          if (snap && snap.val()) {
+            const updates = {};
+            snap.forEach(ch => { const v = ch.val(); if (v && v.type === 'vacation') updates[ch.key] = null; });
+            if (Object.keys(updates).length) await ref.update(updates);
+          }
+          setEvents(prev => prev.filter(e => e.type !== 'vacation'));
+        } finally {
+          setShowVacationDialog(false);
+        }
+      };
+
+// ---------- Calendar helpers ----------
+      const getEventsForCell = (m, d) => {
+        const dateStr = `${currentYear}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        return events.filter(e => dateStr >= e.startDate && dateStr <= e.endDate);
+      };
+      const isToday = (m, d) => {
+        const t = new Date();
+        return t.getFullYear()===currentYear && t.getMonth()===m && t.getDate()===d;
+      };
+      const isWeekend = (m,d) => [0,6].includes(new Date(currentYear, m, d).getDay());
+      const getWeekdayShort = (m,d) => ['So','Mo','Di','Mi','Do','Fr','Sa'][new Date(currentYear, m, d).getDay()];
+      const formatBirthDateForTooltip = (birthDate) =>
+        new Date(birthDate).toLocaleDateString('de-DE', { day:'2-digit', month:'long', year:'numeric' });
+
+      if (loading) {
+        return <div className="min-h-screen bg-gray-50 flex items-center justify-center"><div className="text-xl">Kalender wird geladen...</div></div>;
+      }
+
+      const userEvents = events.filter(e => e.type !== 'holiday' && e.type !== 'vacation');
+
+      // ---------- UI ----------
+      return (
+        <div className="min-h-screen bg-gray-50 p-2">
+          <div className="max-w-full mx-auto">
+
+            {/* Header / Actions */}
+            <div className="bg-white rounded-lg shadow-md p-4 mb-3">
+              <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                <div className="flex items-center gap-3">
+                  <h1 className="text-2xl font-bold text-gray-800">OneYear Jahreskalender {currentYear}</h1>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={()=>{
+                        const y=currentYear-1;
+                        setCurrentYear(y);
+                        setNewEvent({ title:'', startDate:`${y}-01-01`, endDate:`${y}-01-01`, color:'#FFE680', type:'urlaub', notes:'' });
+                        setNewBirthday({ firstName:'', lastName:'', birthDate:'1990-01-01', info:'' });
+                      }}
+                      className="px-2 py-1 text-white rounded text-sm font-bold hover:opacity-90" style={{background:'#87C4A3'}}>←</button>
+                    <button
+                      onClick={()=>{
+                        const y=currentYear+1;
+                        setCurrentYear(y);
+                        setNewEvent({ title:'', startDate:`${y}-01-01`, endDate:`${y}-01-01`, color:'#FFE680', type:'urlaub', notes:'' });
+                        setNewBirthday({ firstName:'', lastName:'', birthDate:'1990-01-01', info:'' });
+                      }}
+                      className="px-2 py-1 text-white rounded text-sm font-bold hover:opacity-90" style={{background:'#87C4A3'}}>→</button>
+                  </div>
+                  {currentTime && (
+                    <div className="text-2xl font-bold text-gray-600 font-mono" style={{letterSpacing:'0.05em'}}>
+                      {currentTime}
+                    </div>
+                  )}
+                </div>
+                <div className="flex gap-2 flex-wrap items-center">
+                  {currentUser && (
+                    <div className="flex items-center gap-2 px-3 py-2 rounded border" style={{
+                      background: isViewOnly ? '#FEF3C7' : '#DBEAFE',
+                      borderColor: isViewOnly ? '#FCD34D' : '#93C5FD'
+                    }}>
+                      <span className="text-sm font-semibold text-gray-700">
+                        {isViewOnly ? '🔒 Nur-Lese-Modus' : `👤 ${currentUser}`}
+                      </span>
+                      <button 
+                        onClick={() => setShowUserSelection(true)}
+                        className="text-xs hover:underline"
+                        style={{color: isViewOnly ? '#92400E' : '#1E40AF'}}
+                        title="Benutzer wechseln">
+                        wechseln
+                      </button>
+                    </div>
+                  )}
+<div className="flex gap-2 flex-wrap">
+  {!isViewOnly && (
+    <>
+      <button onClick={()=>{ setShowAddEvent(v=>!v); setShowAddBirthday(false); }}
+              className="px-3 py-2 text-white rounded text-sm hover:opacity-90 flex items-center gap-2"
+              style={{background:'#C7B3FF'}}>
+        <Plus className="w-4 h-4"/> Ereignis
+      </button>
+
+      <button onClick={()=>{ setShowAddBirthday(v=>!v); setShowAddEvent(false); }}
+              className="px-3 py-2 text-white rounded text-sm hover:opacity-90 flex items-center gap-2"
+              style={{background:'#FF69B4'}}>
+        <Plus className="w-4 h-4"/> Geburtstag
+      </button>
+
+      <button 
+        onClick={performUndo}
+        disabled={!canUndo}
+        className={`px-3 py-2 text-white rounded text-sm flex items-center gap-2 ${!canUndo ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90'}`}
+        style={{background: canUndo ? '#87C4A3' : '#9CA3AF'}}
+        title={canUndo ? 'Letzte Änderung rückgängig machen' : 'Keine Änderungen zum Rückgängig machen'}>
+        ↶ Undo
+      </button>
+
+      <button onClick={()=>setShowMoreMenu(true)}
+              className="px-3 py-2 text-white rounded text-sm hover:opacity-90 flex items-center gap-2"
+              style={{background:'#4B5563'}}>
+        Mehr <span style={{fontSize:'1.2em'}}>▾</span>
+      </button>
+    </>
+  )}
+</div>
+</div>
+              </div>
+
+              {/* Add Birthday */}
+              {showAddBirthday && (
+                <div className="p-3 rounded-lg mb-3 border-2" style={{ background:'#FFF0F5', borderColor:'#FF69B4' }}>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-bold text-sm">{editingEvent ? 'Geburtstag bearbeiten' : 'Neuer Geburtstag'}</h3>
+                    <button onClick={cancelEdit} className="text-gray-500 hover:text-gray-700"><X className="w-4 h-4" /></button>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                    <input type="text" placeholder="Vorname" value={newBirthday.firstName} onChange={(e)=>setNewBirthday({...newBirthday, firstName:e.target.value})} className="px-2 py-1 border rounded"/>
+                    <input type="text" placeholder="Nachname" value={newBirthday.lastName}  onChange={(e)=>setNewBirthday({...newBirthday, lastName:e.target.value})} className="px-2 py-1 border rounded"/>
+                    <input type="date" value={newBirthday.birthDate} onChange={(e)=>setNewBirthday({...newBirthday, birthDate:e.target.value})} className="px-2 py-1 border rounded"/>
+                    <input type="text" placeholder="Info/Beziehung (optional)" value={newBirthday.info} onChange={(e)=>setNewBirthday({...newBirthday, info:e.target.value})} className="px-2 py-1 border rounded"/>
+                  </div>
+                  <div className="flex gap-2 mt-2">
+                    <button onClick={editingEvent ? updateBirthday : addBirthday} className="px-3 py-1 text-white rounded text-sm hover:opacity-90" style={{background:'#87C4A3'}}>{editingEvent ? 'Aktualisieren' : 'Hinzufügen'}</button>
+                    <button onClick={cancelEdit} className="px-3 py-1 bg-gray-300 rounded text-sm hover:bg-gray-400">Abbrechen</button>
+                  </div>
+                </div>
+              )}
+
+              {/* Add Event */}
+              {showAddEvent && (
+                <div className="bg-gray-50 p-3 rounded-lg mb-3 border-2" style={{ borderColor:'#C7B3FF' }}>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-bold text-sm">{editingEvent ? 'Ereignis bearbeiten' : 'Neues Ereignis'}</h3>
+                    <button onClick={cancelEdit} className="text-gray-500 hover:text-gray-700"><X className="w-4 h-4" /></button>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                    <input type="text" placeholder="Titel" value={newEvent.title} onChange={(e)=>setNewEvent({...newEvent, title:e.target.value})} className="px-2 py-1 border rounded"/>
+                    <select value={newEvent.type} onChange={(e)=>setNewEvent({...newEvent, type:e.target.value, color:(eventTypes[e.target.value]?.color || '#C7B3FF')})} className="px-2 py-1 border rounded">
+                      {Object.entries(eventTypes).filter(([k,v])=>!v.hidden).map(([k,v])=>(
+                        <option key={k} value={k}>{v.emoji ? `${v.emoji} ` : ''}{v.label}</option>
+                      ))}
+                    </select>
+                    <input type="date" value={newEvent.startDate} onChange={(e)=>setNewEvent({...newEvent, startDate:e.target.value, endDate:e.target.value})} className="px-2 py-1 border rounded"/>
+                    <input type="date" value={newEvent.endDate}   onChange={(e)=>setNewEvent({...newEvent, endDate:e.target.value})} className="px-2 py-1 border rounded"/>
+                    <input type="time" placeholder="Von (optional)" value={newEvent.startTime || ''} onChange={(e)=>setNewEvent({...newEvent, startTime:e.target.value})} className="px-2 py-1 border rounded" title="Startzeit (optional)"/>
+                    <input type="time" placeholder="Bis (optional)" value={newEvent.endTime || ''} onChange={(e)=>setNewEvent({...newEvent, endTime:e.target.value})} className="px-2 py-1 border rounded" title="Endzeit (optional)"/>
+                    <textarea placeholder="Notizen (optional)" rows="2" value={newEvent.notes} onChange={(e)=>setNewEvent({...newEvent, notes:e.target.value})} className="px-2 py-1 border rounded col-span-1 md:col-span-2"/>
+                  </div>
+                  <div className="flex gap-2 mt-2">
+                    <button onClick={editingEvent ? updateEvent : addEvent} className="px-3 py-1 text-white rounded text-sm hover:opacity-90" style={{background:'#87C4A3'}}>{editingEvent ? 'Aktualisieren' : 'Hinzufügen'}</button>
+                    <button onClick={cancelEdit} className="px-3 py-1 bg-gray-300 rounded text-sm hover:bg-gray-400">Abbrechen</button>
+                  </div>
+                </div>
+              )}
+
+              {/* Geburtstage/Ereignisse Listen */}
+              <details className="text-sm mb-2">
+                <summary className="cursor-pointer p-2 rounded font-semibold" style={{ background:'#FFF0F5', color:'#FF1493' }}>
+                  Geburtstage ({userEvents.filter(e=>e.type==='birthday').length})
+                </summary>
+                <div className="mt-2 space-y-1">
+                  {userEvents.filter(e=>e.type==='birthday').sort((a,b)=>a.startDate.localeCompare(b.startDate)).map((bday, idx) => {
+                    const age = bday.birthDate ? calculateAge(bday.birthDate, currentYear) : '';
+                    const fullName = bday.lastName ? `${bday.firstName} ${bday.lastName}` : bday.firstName || bday.title;
+                    return (
+                      <div key={idx} className="flex items-center justify-between p-1 bg-white rounded text-xs hover:bg-gray-50">
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded" style={{background:bday.color}}></div>
+                          <span>{fullName} {age && `(${age})`}</span>
+                          <span className="text-gray-500">{new Date(bday.startDate).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'})}</span>
+                        </div>
+                        <div className="flex gap-1">
+                          <button onClick={()=>startEditEvent(bday)} className="text-blue-500 hover:text-blue-700 p-1"><Edit className="w-3 h-3"/></button>
+                          <button onClick={()=>deleteEvent(bday)} className="text-red-500 hover:text-red-700 p-1"><Trash2 className="w-3 h-3"/></button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </details>
+
+              <details className="text-sm">
+                <summary className="cursor-pointer p-2 bg-gray-100 rounded font-semibold">
+                  Ereignisse ({userEvents.filter(e=>e.type!=='birthday').length})
+                </summary>
+                <div className="mt-2 space-y-1 max-h-32 overflow-y-auto">
+                  {userEvents.filter(e=>e.type!=='birthday').map((event, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-1 hover:bg-gray-50 rounded text-xs">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded" style={{background:event.color}}></div>
+                        <span>{event.title}</span>
+                        <span className="text-gray-500">
+                          {event.startDate === event.endDate
+                            ? new Date(event.startDate).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'})
+                            : `${new Date(event.startDate).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'})} - ${new Date(event.endDate).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'})}`
+                          }
+                        </span>
+                      </div>
+                      <div className="flex gap-1">
+                        <button onClick={()=>startEditEvent(event)} className="text-blue-500 hover:text-blue-700 p-1"><Edit className="w-3 h-3"/></button>
+                        <button onClick={()=>deleteEvent(event)} className="text-red-500 hover:text-red-700 p-1"><Trash2 className="w-3 h-3"/></button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </details>
+            </div>
+
+            {/* Kalender-Grid */}
+            <div className="bg-white rounded-lg shadow-md p-2 overflow-x-auto">
+              <div style={{ 
+                zoom: isCompactView ? '0.85' : '1',
+                transition: 'zoom 0.3s ease'
+              }}>
+                <table className="border-collapse" style={{ borderSpacing:0, tableLayout:'fixed', width:'100%' }}>
+                <colgroup>{months.map((_,i)=><col key={i} style={{ width:'11rem' }}/>)}</colgroup>
+                <thead>
+                  <tr>{months.map((m,i)=>{
+                    const isCurrentMonth = currentYear === new Date().getFullYear() && i === new Date().getMonth();
+                    return (
+                      <th 
+                        key={i} 
+                        id={`month-${i}`}
+                        className="border text-white text-center py-2 font-bold text-sm" 
+                        style={{
+                          background: isCurrentMonth ? '#F59E0B' : '#374151',
+                          borderColor: '#9CA3AF',
+                          borderWidth: '1px'
+                        }}>
+                        {m.fullName}
+                      </th>
+                    );
+                  })}</tr>
+                </thead>
+                <tbody>
+                  {Array.from({length:31},(_,d)=>d+1).map((day)=>{
+                    const rowHeight = 3.5;
+                    return (
+                      <tr key={day} style={{ height:`${rowHeight}rem` }}>
+                        {months.map((month, monthIndex) => {
+                          if (day > month.days) {
+                            return <td key={monthIndex} className="bg-white" style={{ height:`${rowHeight}rem` }}></td>;
+                          }
+                          const cellEvents = getEventsForCell(monthIndex, day);
+                          const today = isToday(monthIndex, day);
+                          const weekend = isWeekend(monthIndex, day);
+
+                          const dateKey = `${currentYear}-${String(monthIndex+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+                          const eventsStartingToday = cellEvents.filter(e => e.startDate === dateKey && e.type !== 'mamazeit' && e.type !== 'papazeit');
+                          
+                          // Check for mama/papa events (could be both on switch day)
+                          const mamaPapaEvents = cellEvents.filter(e => e.type === 'mamazeit' || e.type === 'papazeit');
+                          const hasMama = mamaPapaEvents.some(e => e.type === 'mamazeit');
+                          const hasPapa = mamaPapaEvents.some(e => e.type === 'papazeit');
+                          const mamaPapaEvent = mamaPapaEvents[0]; // For click handler
+                          const isSwitch = hasMama && hasPapa;
+
+                          // Übergabe-Logik: Wer startet an diesem Tag?
+                          const mamaEvent = mamaPapaEvents.find(e => e.type === 'mamazeit');
+                          const papaEvent = mamaPapaEvents.find(e => e.type === 'papazeit');
+                          const mamaStarts = mamaEvent && mamaEvent.startDate === dateKey;
+                          const papaStarts = papaEvent && papaEvent.startDate === dateKey;
+                          // Mama startet = Papa übergibt = Papa zuerst: 👨🏼👩🏻
+                          // Papa startet = Mama übergibt = Mama zuerst: 👩🏻👨🏼
+                          const showPapaFirst = mamaStarts && !papaStarts;
+
+
+                          const sortedCellEvents = [...cellEvents]
+                            .filter(e => e.type !== 'mamazeit' && e.type !== 'papazeit')
+                            .sort((a,b)=>{
+                              const prio = (e)=> e.type === 'holiday' ? 3 : (e.type === 'urlaub' ? 2 : (e.type === 'vacation' ? 1 : 2));
+                              return prio(b) - prio(a);
+                            });
+
+                          let bgStyle = {};
+                          if (eventsStartingToday.length >= 1) bgStyle = { background: eventsStartingToday[0].color };
+                          else if (sortedCellEvents.length > 0) bgStyle = { background: sortedCellEvents[0].color };
+                          else if (weekend) bgStyle = { background: '#E5E7EB' };
+                          else bgStyle = { background: 'white' };
+
+                          return (
+                            <td key={monthIndex}
+                                className="border border-gray-400 px-2 cursor-pointer hover:opacity-90"
+                                style={{ 
+                                  ...bgStyle, 
+                                  height:`${rowHeight}rem`, 
+                                  overflow:'hidden', 
+                                  position:'relative',
+                                  ...(today && { boxShadow: 'inset 0 0 0 3px #F59E0B' }),
+                                  ...(isDateInDragRange(dateKey) && { 
+                                    boxShadow: today 
+                                      ? 'inset 0 0 0 3px #F59E0B, inset 0 0 0 5px #3B82F6' 
+                                      : 'inset 0 0 0 3px #3B82F6',
+                                    background: isDragging ? 'rgba(59, 130, 246, 0.1)' : bgStyle.background
+                                  })
+                                }}
+                                onMouseDown={() => handleMouseDown(dateKey)}
+                                onMouseEnter={() => handleMouseEnter(dateKey)}
+                                onMouseUp={handleMouseUp}
+                                onClick={(e)=>{
+                                  // Nur bei Single-Click (kein Drag)
+                                  if (!isDragging && dragStartDate === null && !isViewOnly) {
+                                    setShowDayEvents({ date: dateKey, events: cellEvents });
+                                  }
+                                }}>
+                              {/* Multi-Streifen Logik: Alle Events die nicht in den 3 Zeilen angezeigt werden */}
+                              {(() => {
+                                // Berechne welche Events bereits in den 3 Zeilen angezeigt werden
+                                const displayedEvents = [];
+                                if (eventsStartingToday.length >= 1) displayedEvents.push(eventsStartingToday[0]);
+                                if (eventsStartingToday.length >= 2) displayedEvents.push(eventsStartingToday[1]);
+                                if (eventsStartingToday.length >= 3) displayedEvents.push(eventsStartingToday[2]);
+                                // Wenn keine Events heute starten, wird das erste sortedCellEvent als Hintergrund verwendet
+                                if (eventsStartingToday.length === 0 && sortedCellEvents.length > 0) {
+                                  displayedEvents.push(sortedCellEvents[0]);
+                                }
+                                
+                                // Alle Events die als Streifen angezeigt werden sollen
+                                const stripeEvents = cellEvents.filter(e => 
+                                  !displayedEvents.includes(e) && 
+                                  e.type !== 'mamazeit' && 
+                                  e.type !== 'papazeit'
+                                );
+                                
+                                // Wochenend-Streifen prüfen
+                                const showWeekendStripe = weekend && 
+                                  eventsStartingToday.length > 0 && 
+                                  eventsStartingToday[0].type !== 'holiday' && 
+                                  !eventTypes[eventsStartingToday[0].type]?.hasStripe;
+                                
+                                return (
+                                  <>
+                                    {/* Wochenend-Streifen (ganz rechts) */}
+                                    {showWeekendStripe && (
+                                      <div className="absolute top-0 right-0 bottom-0 w-2" 
+                                           style={{ background:'#E5E7EB' }}></div>
+                                    )}
+                                    
+                                    {/* Event-Streifen (von links nach rechts) */}
+                                    {stripeEvents.map((event, index) => (
+                                      <div key={event.firebaseKey || index}
+                                           className="absolute top-0 bottom-0" 
+                                           style={{ 
+                                             background: event.color,
+                                             width: '8px',
+                                             right: `${(showWeekendStripe ? 2 : 0) + ((stripeEvents.length - 1 - index) * 8)}px`
+                                           }}
+                                           title={event.title}
+                                      ></div>
+                                    ))}
+                                    
+                                    {/* hasStripe Events (Mama/Papa-Zeit wenn als Hintergrund) */}
+                                    {eventsStartingToday.length > 0 && eventTypes[eventsStartingToday[0].type]?.hasStripe && (
+                                      <div className="absolute top-0 right-0 bottom-0 w-3"
+                                           style={{ background: eventsStartingToday[0].color, opacity:0.6, borderLeft:'2px solid white' }}></div>
+                                    )}
+                                  </>
+                                );
+                              })()}
+
+                              <div className="flex flex-col h-full pointer-events-none">
+                                <div className="flex items-center gap-2" style={{ height:'33.33%' }}>
+                                  <span className="text-xs text-gray-600 font-medium" style={{ width:'1.25rem', flexShrink:0 }}>{String(day).padStart(2,'0')}</span>
+                                  {eventsStartingToday.length > 0 && (
+                                    <span className={`text-xs overflow-hidden whitespace-nowrap text-ellipsis block flex-1 pointer-events-auto hover:underline ${eventsStartingToday[0].type === 'holiday' || eventsStartingToday[0].type === 'vacation' ? 'font-normal' : 'font-semibold'}`}
+                                          onClick={(e)=>{ e.stopPropagation(); setShowEventDetail(eventsStartingToday[0]); }}>
+                                      {eventsStartingToday[0].title}
+                                    </span>
+                                  )}
+                                </div>
+
+                                {eventsStartingToday.length >= 2 ? (
+                                  <div className="flex items-center gap-2 -mx-2 px-2"
+                                       style={{ background: eventsStartingToday[1].color, height:'33.33%', color:getContrastColor(eventsStartingToday[1].color) }}>
+                                    <span className="text-xs font-normal" style={{ width:'1.25rem', flexShrink:0 }}>{getWeekdayShort(monthIndex, day)}</span>
+                                    <span className={`text-xs overflow-hidden whitespace-nowrap text-ellipsis block flex-1 pointer-events-auto hover:underline ${eventsStartingToday[1].type === 'holiday' || eventsStartingToday[1].type === 'vacation' ? 'font-normal' : 'font-semibold'}`}
+                                          onClick={(e)=>{ e.stopPropagation(); setShowEventDetail(eventsStartingToday[1]); }}>
+                                      {eventsStartingToday[1].title}
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center" style={{ height:'33.33%' }}>
+                                    <span className="text-xs font-normal"
+                                          style={{ width:'1.25rem', flexShrink:0, color: eventsStartingToday.length >= 1 ? getContrastColor(eventsStartingToday[0].color) : '#9CA3AF' }}>
+                                      {getWeekdayShort(monthIndex, day)}
+                                    </span>
+                                  </div>
+                                )}
+
+                                {/* Mama/Papa-Zeit Emoji + drittes Event */}
+                                {(mamaPapaEvent || eventsStartingToday.length >= 3) && (
+                                  <div className="flex items-center gap-2 -mx-2 px-2"
+                                       style={{ 
+                                         background: eventsStartingToday.length >= 3 ? eventsStartingToday[2].color : 'transparent', 
+                                         height: '33.34%',
+                                         color: eventsStartingToday.length >= 3 ? getContrastColor(eventsStartingToday[2].color) : 'inherit'
+                                       }}>
+                                    {mamaPapaEvent ? (
+                                      <span 
+                                        className="text-xs pointer-events-auto cursor-pointer hover:opacity-80"
+                                        style={{ width: (hasMama && hasPapa) ? '2.5rem' : '1.25rem', flexShrink:0 }}
+                                        onClick={(e)=>{ e.stopPropagation(); setShowEventDetail(mamaPapaEvent); }}
+                                        title={hasMama && hasPapa ? (showPapaFirst ? 'Papa übergibt an Mama' : 'Mama übergibt an Papa') : mamaPapaEvent.title}
+                                      >
+                                        {hasMama && hasPapa ? (
+                                          showPapaFirst ? '👨🏼👩🏻' : '👩🏻👨🏼'
+                                        ) : (
+                                          hasMama ? '👩🏻' : '👨🏼'
+                                        )}
+                                      </span>
+                                    ) : (
+                                      <span style={{ width:'1.25rem', flexShrink:0 }}></span>
+                                    )}
+                                    {eventsStartingToday.length >= 3 && (
+                                      <span className={`text-xs overflow-hidden whitespace-nowrap text-ellipsis block flex-1 pointer-events-auto hover:underline ${eventsStartingToday[2].type === 'holiday' || eventsStartingToday[2].type === 'vacation' ? 'font-normal' : 'font-semibold'}`}
+                                            onClick={(e)=>{ e.stopPropagation(); setShowEventDetail(eventsStartingToday[2]); }}>
+                                        {eventsStartingToday[2].title}
+                                      </span>
+                                    )}
+                                    {eventsStartingToday.length > 3 && (
+                                      <button onClick={(e)=>{ e.stopPropagation(); setShowDayEvents({ date: dateKey, events: eventsStartingToday }); }}
+                                              className="text-xs font-bold hover:underline cursor-pointer flex-shrink-0 pointer-events-auto"
+                                              style={{ color: eventsStartingToday.length >= 3 ? getContrastColor(eventsStartingToday[2].color) : '#374151' }}>
+                                        +{eventsStartingToday.length - 3}
+                                      </button>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              </div>
+            </div>
+
+            {/* Grid: Kompakter Kalender + Changelog + Co-Parenting Stats */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
+              {/* Kompakter Verfügbarkeits-Kalender */}
+              <div className="lg:col-span-1">
+                <div className="compact-calendar bg-white rounded-lg shadow-md p-3">
+              <h2 className="text-lg font-bold mb-2 text-gray-800">Verfügbarkeit {currentYear}</h2>
+              <p className="text-xs text-gray-600 mb-3">Zeigt nur persönliche Events (keine Feiertage/Ferien) – je mehr Farben, desto voller der Tag</p>
+              <div className="overflow-x-auto">
+                <div className="flex" style={{ minWidth:'fit-content' }}>
+                  {months.map((month, monthIndex) => {
+                    const daysInMonth = monthIndex === 1
+                      ? (currentYear % 4 === 0 && (currentYear % 100 !== 0 || currentYear % 400 === 0) ? 29 : 28)
+                      : month.days;
+                    const monthLetter = month.name[0];
+
+                    return (
+                      <div key={monthIndex} className="flex flex-col">
+                        <div className="font-bold text-xs text-center text-white px-0.5 py-1 mb-1" style={{ width:'20px', background:'#374151' }}>{monthLetter}</div>
+                        <div className="flex flex-col">
+                          {Array.from({length:daysInMonth},(_,d)=>d+1).map((day)=>{
+                            const allEvents = getEventsForCell(monthIndex, day);
+                            const personal = allEvents.filter(e => e.type !== 'holiday' && e.type !== 'vacation' && e.type !== 'mamazeit' && e.type !== 'papazeit');
+                            const today = isToday(monthIndex, day);
+                            const weekend = isWeekend(monthIndex, day);
+                            const display = personal.slice(0, 3);
+
+                            return (
+                              <div key={day}
+                                   className="cursor-pointer hover:opacity-80"
+                                   style={{
+                                     width:'20px', height:'18px',
+                                     background: weekend && display.length === 0 ? '#E5E7EB' : (display.length === 0 ? 'white' : display[0].color),
+                                     border:'1px solid #D1D5DB', position:'relative', fontSize:'8px',
+                                     display:'flex', alignItems:'center', justifyContent:'center',
+                                     ...(today && { boxShadow: '0 0 0 2px #F59E0B' })
+                                   }}
+                                   onClick={()=>{
+                                     if (personal.length > 0) {
+                                       setShowDayEvents({
+                                         date: `${currentYear}-${String(monthIndex+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`,
+                                         events: personal
+                                       });
+                                     }
+                                   }}
+                                   title={personal.length > 0 ? personal.map(e=>e.title).join(', ') : `${day}. ${month.fullName}`}>
+                                {display.length >= 2 && (
+                                  <div style={{ position:'absolute', right:0, top:0, bottom:0, width:'6px', background:display[1].color }}></div>
+                                )}
+                                {display.length >= 3 && (
+                                  <div style={{ position:'absolute', right:'6px', top:0, bottom:0, width:'3px', background:display[2].color }}></div>
+                                )}
+                                <span style={{ color: display.length > 0 ? getContrastColor(display[0].color) : (weekend ? '#6B7280' : '#374151'), fontSize:'7px', fontWeight:'600', position:'relative', zIndex:1 }}>
+                                  {day}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Changelog */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-lg shadow-md p-3">
+              <h2 className="text-lg font-bold mb-2 text-gray-800">Änderungen</h2>
+              <p className="text-xs text-gray-600 mb-3">Neueste Aktivitäten im Kalender</p>
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {(() => {
+                  // Berechne Changelog aus Events
+                  const userEvents = events
+                    .filter(e => e.firebaseKey && e.type !== 'holiday' && e.type !== 'vacation')
+                    .map(e => ({
+                      ...e,
+                      timestamp: e.editedAt || e.createdAt || '2000-01-01T00:00:00Z',
+                      action: e.editedAt ? 'edit' : 'create',
+                      user: e.editedBy || e.createdBy || 'Unbekannt'
+                    }))
+                    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+                    .slice(0, 20);
+
+                  const getTimeAgo = (timestamp) => {
+                    const now = new Date();
+                    const past = new Date(timestamp);
+                    const diffMs = now - past;
+                    const diffMins = Math.floor(diffMs / 60000);
+                    const diffHours = Math.floor(diffMs / 3600000);
+                    const diffDays = Math.floor(diffMs / 86400000);
+                    
+                    if (diffMins < 1) return 'gerade eben';
+                    if (diffMins < 60) return `vor ${diffMins} Min`;
+                    if (diffHours < 24) return `vor ${diffHours} Std`;
+                    if (diffDays === 1) return 'gestern';
+                    if (diffDays < 7) return `vor ${diffDays} Tagen`;
+                    return past.toLocaleDateString('de-DE', {day:'numeric', month:'short'});
+                  };
+
+                  if (userEvents.length === 0) {
+                    return <p className="text-sm text-gray-500 italic">Noch keine Änderungen</p>;
+                  }
+
+                  return userEvents.map((event, index) => {
+                    const icon = event.action === 'edit' ? '✏️' : '🔵';
+                    const actionText = event.action === 'edit' ? 'bearbeitet' : 'erstellt';
+                    const dateStr = event.startDate === event.endDate
+                      ? new Date(event.startDate).toLocaleDateString('de-DE', {day:'numeric', month:'short'})
+                      : `${new Date(event.startDate).toLocaleDateString('de-DE', {day:'numeric', month:'short'})}–${new Date(event.endDate).toLocaleDateString('de-DE', {day:'numeric', month:'short'})}`;
+                    
+                    return (
+                      <div key={index} className="text-xs border-l-2 pl-2 py-1 hover:bg-gray-50" style={{borderColor: event.color}}>
+                        <div className="flex items-start gap-1">
+                          <span>{icon}</span>
+                          <div className="flex-1">
+                            <span className="font-semibold">{event.user}</span>
+                            {' '}{actionText}{' '}
+                            <span className="font-semibold" style={{color: event.color}}>"{event.title}"</span>
+                            <div className="text-gray-500 mt-0.5">
+                              {dateStr} · {getTimeAgo(event.timestamp)}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+            </div>
+          </div>
+
+          {/* Co-Parenting Statistik */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-lg shadow-md p-3">
+              <h2 className="text-lg font-bold mb-2 text-gray-800">Co-Parenting Statistik</h2>
+              <p className="text-xs text-gray-600 mb-3">Tage pro Monat mit Mama/Papa</p>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b-2">
+                      <th className="text-left py-2 font-semibold">Monat</th>
+                      <th className="text-center py-2 font-semibold">👩🏻 Mama</th>
+                      <th className="text-center py-2 font-semibold">👨🏼 Papa</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(() => {
+                      const months = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+                      const stats = [];
+                      let totalMama = 0;
+                      let totalPapa = 0;
+
+                      // Berechne für jeden Monat
+                      for (let m = 0; m < 12; m++) {
+                        const daysInMonth = new Date(currentYear, m + 1, 0).getDate();
+                        let mamaDays = 0;
+                        let papaDays = 0;
+
+                        for (let d = 1; d <= daysInMonth; d++) {
+                          const dateKey = `${currentYear}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                          const dayEvents = events.filter(e => 
+                            e.startDate <= dateKey && 
+                            e.endDate >= dateKey && 
+                            (e.type === 'mamazeit' || e.type === 'papazeit')
+                          );
+
+                          const hasMama = dayEvents.some(e => e.type === 'mamazeit');
+                          const hasPapa = dayEvents.some(e => e.type === 'papazeit');
+
+                          if (hasMama && hasPapa) {
+                            // Beide = Übergabetag = je 0.5
+                            mamaDays += 0.5;
+                            papaDays += 0.5;
+                          } else if (hasMama) {
+                            mamaDays += 1;
+                          } else if (hasPapa) {
+                            papaDays += 1;
+                          }
+                        }
+
+                        totalMama += mamaDays;
+                        totalPapa += papaDays;
+
+                        const monthTotal = mamaDays + papaDays;
+                        const mamaPercent = monthTotal > 0 ? Math.round((mamaDays / monthTotal) * 100) : 0;
+                        const papaPercent = monthTotal > 0 ? Math.round((papaDays / monthTotal) * 100) : 0;
+
+                        stats.push({
+                          month: months[m],
+                          mama: mamaDays,
+                          papa: papaDays,
+                          mamaPercent,
+                          papaPercent
+                        });
+                      }
+
+                      const yearTotal = totalMama + totalPapa;
+                      const yearMamaPercent = yearTotal > 0 ? Math.round((totalMama / yearTotal) * 100) : 0;
+                      const yearPapaPercent = yearTotal > 0 ? Math.round((totalPapa / yearTotal) * 100) : 0;
+
+                      return (
+                        <>
+                          {stats.map((stat, idx) => (
+                            <tr key={idx} className="border-b hover:bg-gray-50">
+                              <td className="py-2 font-medium">{stat.month}</td>
+                              <td className="text-center py-2">
+                                {stat.mama > 0 ? (
+                                  <div>
+                                    <div className="font-semibold">{stat.mama}</div>
+                                    <div className="text-gray-500 text-xs">({stat.mamaPercent}%)</div>
+                                  </div>
+                                ) : (
+                                  <span className="text-gray-400">-</span>
+                                )}
+                              </td>
+                              <td className="text-center py-2">
+                                {stat.papa > 0 ? (
+                                  <div>
+                                    <div className="font-semibold">{stat.papa}</div>
+                                    <div className="text-gray-500 text-xs">({stat.papaPercent}%)</div>
+                                  </div>
+                                ) : (
+                                  <span className="text-gray-400">-</span>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                          <tr className="border-t-2 font-bold bg-gray-50">
+                            <td className="py-2">GESAMT</td>
+                            <td className="text-center py-2">
+                              <div>
+                                <div>{totalMama}</div>
+                                <div className="text-gray-600 text-xs">({yearMamaPercent}%)</div>
+                              </div>
+                            </td>
+                            <td className="text-center py-2">
+                              <div>
+                                <div>{totalPapa}</div>
+                                <div className="text-gray-600 text-xs">({yearPapaPercent}%)</div>
+                              </div>
+                            </td>
+                          </tr>
+                        </>
+                      );
+                    })()}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+            {/* Detail-Modal */}
+            {showEventDetail && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={()=>setShowEventDetail(null)}>
+                <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-4" onClick={(e)=>e.stopPropagation()}>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-bold text-lg">Details</h3>
+                    <button onClick={()=>setShowEventDetail(null)} className="text-gray-500 hover:text-gray-700"><X className="w-5 h-5"/></button>
+                  </div>
+                  <div className="border-l-4 pl-3 py-2" style={{borderColor: showEventDetail.color}}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-4 h-4 rounded flex-shrink-0" style={{background: showEventDetail.color}}></div>
+                      <span className="font-semibold">{showEventDetail.title}</span>
+                    </div>
+                    <div className="text-sm text-gray-600 ml-6 mb-2">
+                      {showEventDetail.startDate === showEventDetail.endDate
+                        ? new Date(showEventDetail.startDate).toLocaleDateString('de-DE',{day:'numeric',month:'long',year:'numeric'})
+                        : `${new Date(showEventDetail.startDate).toLocaleDateString('de-DE',{day:'numeric',month:'long'})} - ${new Date(showEventDetail.endDate).toLocaleDateString('de-DE',{day:'numeric',month:'long',year:'numeric'})}`}
+                      {showEventDetail.startTime && showEventDetail.endTime && (
+                        <span className="ml-2 text-blue-600 font-medium">🕐 {showEventDetail.startTime} - {showEventDetail.endTime}</span>
+                      )}
+                    </div>
+                    {showEventDetail.type === 'birthday' && showEventDetail.birthDate && (
+                      <>
+                        <div className="text-sm text-gray-600 ml-6">{calculateAge(showEventDetail.birthDate, currentYear)} Jahre alt</div>
+                        <div className="text-sm text-gray-600 ml-6">Geboren: {formatBirthDateForTooltip(showEventDetail.birthDate)}</div>
+                        {showEventDetail.info && <div className="text-sm text-gray-700 ml-6 mt-2 p-2 bg-gray-50 rounded italic">{showEventDetail.info}</div>}
+                      </>
+                    )}
+                    {showEventDetail.type !== 'birthday' && showEventDetail.notes && (
+                      <div className="text-sm text-gray-700 ml-6 mt-2 p-2 bg-gray-50 rounded"><strong>Notizen:</strong> {showEventDetail.notes}</div>
+                    )}
+                  </div>
+                  <div className="mt-4 pt-3 border-t grid grid-cols-1 gap-2">
+                    <button onClick={()=>downloadIcs(showEventDetail)} className="px-3 py-2 text-white rounded hover:opacity-90" style={{background:'#4A90E2'}}>.ics öffnen/ speichern</button>
+                    <button onClick={()=>openGoogle(showEventDetail)} className="px-3 py-2 text-white rounded hover:opacity-90" style={{background:'#87C4A3'}}>Zu Google Calendar</button>
+                    <button onClick={()=>openOutlook(showEventDetail)} className="px-3 py-2 text-white rounded hover:opacity-90" style={{background:'#9370DB'}}>Zu Outlook.com</button>
+                    {!isViewOnly && (
+                      <>
+                        <button 
+                          onClick={()=>{
+                            if (showEventDetail.type === 'birthday') {
+                              setNewBirthday({
+                                firstName: showEventDetail.firstName || '',
+                                lastName: showEventDetail.lastName || '',
+                                birthDate: showEventDetail.birthDate || '',
+                                info: showEventDetail.info || ''
+                              });
+                              setEditingEvent(showEventDetail);
+                              setShowAddBirthday(true);
+                              setShowAddEvent(false);
+                            } else {
+                              setNewEvent({
+                                title: showEventDetail.title || '',
+                                startDate: showEventDetail.startDate || '',
+                                endDate: showEventDetail.endDate || '',
+                                color: showEventDetail.color || '#C7B3FF',
+                                type: showEventDetail.type || 'event',
+                                notes: showEventDetail.notes || '',
+                                startTime: showEventDetail.startTime || '',
+                                endTime: showEventDetail.endTime || ''
+                              });
+                              setEditingEvent(showEventDetail);
+                              setShowAddEvent(true);
+                              setShowAddBirthday(false);
+                            }
+                            setShowEventDetail(null);
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                          }} 
+                          className="px-3 py-2 rounded text-white hover:opacity-90"
+                          style={{background:'#FFB84D'}}
+                        >
+                          ✏️ Editieren
+                        </button>
+                        <button 
+                          onClick={()=>{
+                            if (confirm(`"${showEventDetail.title}" wirklich löschen?`)) {
+                              deleteEvent(showEventDetail);
+                              setShowEventDetail(null);
+                            }
+                          }}
+                          className="px-3 py-2 rounded text-white hover:opacity-90"
+                          style={{background:'#FF6B6B'}}
+                        >
+                          🗑️ Löschen
+                        </button>
+                      </>
+                    )}
+                    <button onClick={()=>setShowEventDetail(null)} className="px-3 py-2 rounded border text-gray-700 hover:bg-gray-50">Fertig</button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Tages-Events */}
+            {showDayEvents && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={()=>setShowDayEvents(null)}>
+                <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-4" onClick={(e)=>e.stopPropagation()}>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-bold text-lg">
+                      Ereignisse am {new Date(showDayEvents.date).toLocaleDateString('de-DE',{day:'2-digit',month:'long',year:'numeric'})}
+                    </h3>
+                    <button onClick={()=>setShowDayEvents(null)} className="text-gray-500 hover:text-gray-700"><X className="w-5 h-5"/></button>
+                  </div>
+                  <div className="space-y-3 max-h-96 overflow-y-auto">
+                    {showDayEvents.events.length > 0 ? (
+                      showDayEvents.events.map((event, idx) => {
+                        const isBirthday = event.type === 'birthday';
+                        const age = isBirthday && event.birthDate ? calculateAge(event.birthDate, currentYear) : null;
+                        const title = isBirthday ? (event.lastName ? `${event.firstName} ${event.lastName}` : event.firstName) : event.title;
+                        return (
+                          <div key={idx} className="border-l-4 pl-3 py-2 cursor-pointer hover:bg-gray-50"
+                               style={{borderColor:event.color}}
+                               onClick={()=>{ setShowDayEvents(null); setShowEventDetail(event); }}>
+                            <div className="flex items-center gap-2 mb-1">
+                              <div className="w-3 h-3 rounded flex-shrink-0" style={{background:event.color}}></div>
+                              <span className="font-semibold text-sm">{title}</span>
+                            </div>
+                            <div className="text-xs text-gray-600 ml-5 mb-1">
+                              {event.startDate === event.endDate
+                                ? new Date(event.startDate).toLocaleDateString('de-DE',{day:'numeric',month:'long',year:'numeric'})
+                                : `${new Date(event.startDate).toLocaleDateString('de-DE',{day:'numeric',month:'long'})} - ${new Date(event.endDate).toLocaleDateString('de-DE',{day:'numeric',month:'long',year:'numeric'})}`}
+                            </div>
+                            {isBirthday && event.birthDate && <div className="text-xs text-gray-600 ml-5">{age} Jahre alt</div>}
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <p className="text-sm text-gray-500 italic text-center py-4">Keine Ereignisse an diesem Tag</p>
+                    )}
+                  </div>
+                  
+                  {/* Buttons für neues Event/Geburtstag */}
+                  {!isViewOnly && (
+                    <div className="mt-4 pt-3 border-t grid grid-cols-2 gap-2">
+                      <button 
+                        onClick={() => {
+                          setNewEvent({
+                            title: '',
+                            startDate: showDayEvents.date,
+                            endDate: showDayEvents.date,
+                            color: '#FFE680',
+                            type: 'urlaub',
+                            notes: '',
+                            startTime: '',
+                            endTime: ''
+                          });
+                          setShowAddEvent(true);
+                          setShowAddBirthday(false);
+                          setEditingEvent(null);
+                          setShowDayEvents(null);
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        className="px-3 py-2 text-white rounded hover:opacity-90 flex items-center justify-center gap-2"
+                        style={{background:'#C7B3FF'}}>
+                        <Plus className="w-4 h-4"/> Ereignis
+                      </button>
+                      
+                      <button 
+                        onClick={() => {
+                          setNewBirthday({
+                            firstName: '',
+                            lastName: '',
+                            birthDate: showDayEvents.date,
+                            info: ''
+                          });
+                          setShowAddBirthday(true);
+                          setShowAddEvent(false);
+                          setEditingEvent(null);
+                          setShowDayEvents(null);
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        className="px-3 py-2 text-white rounded hover:opacity-90 flex items-center justify-center gap-2"
+                        style={{background:'#FF69B4'}}>
+                        <Plus className="w-4 h-4"/> Geburtstag
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Feiertage/Ferien Dialoge */}
+            {showHolidayDialog && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={()=>setShowHolidayDialog(false)}>
+                <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-4" onClick={(e)=>e.stopPropagation()}>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-bold text-lg">Feiertage hinzufügen</h3>
+                    <button onClick={()=>setShowHolidayDialog(false)} className="text-gray-500 hover:text-gray-700"><X className="w-5 h-5"/></button>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-4">Wähle dein Bundesland aus, um die Feiertage für {currentYear} hinzuzufügen.</p>
+                  <select value={selectedBundesland} onChange={(e)=>setSelectedBundesland(e.target.value)} className="w-full px-3 py-2 border rounded mb-4">
+                    {bundeslaender.map(bl => <option key={bl} value={bl}>{bl}</option>)}
+                  </select>
+                  <button
+                    onClick={()=>{
+                      const holidays = getHolidaysForYear(currentYear, selectedBundesland);
+                      holidays.forEach(saveEvent);
+                      setShowHolidayDialog(false);
+                      alert(`Feiertage für ${selectedBundesland} wurden hinzugefügt!`);
+                    }}
+                    className="w-full px-4 py-2 text-white rounded hover:opacity-90"
+                    style={{background:'#FFD4B8', color:'#7A3E00'}}
+                  >Feiertage hinzufügen</button>
+<button
+  onClick={removeHolidays}
+  className="w-full px-4 py-2 rounded border text-red-600 hover:bg-red-50 mt-2"
+  title="Alle eingetragenen Feiertage dieses Jahres entfernen"
+>
+  Feiertage entfernen
+</button>
+
+                </div>
+              </div>
+            )}
+
+            {showVacationDialog && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={()=>setShowVacationDialog(false)}>
+                <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-4" onClick={(e)=>e.stopPropagation()}>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-bold text-lg">Schulferien hinzufügen</h3>
+                    <button onClick={()=>setShowVacationDialog(false)} className="text-gray-500 hover:text-gray-700"><X className="w-5 h-5"/></button>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-4">Wähle dein Bundesland aus, um die Schulferien für {currentYear} hinzuzufügen.</p>
+                  <select value={selectedBundesland} onChange={(e)=>setSelectedBundesland(e.target.value)} className="w-full px-3 py-2 border rounded mb-4">
+                    {bundeslaender.map(bl => <option key={bl} value={bl}>{bl}</option>)}
+                  </select>
+                  <button
+                    onClick={()=>{
+                      const vacations = getVacationsForYear(currentYear, selectedBundesland);
+                      if (vacations.length === 0) {
+                        alert(`Keine Feriendaten für ${selectedBundesland} verfügbar. Bitte manuell eintragen.`);
+                      } else {
+                        vacations.forEach(v => saveEvent({ ...v, color:'#B8E6D5', type:'vacation' }));
+                        setShowVacationDialog(false);
+                        alert(`Schulferien für ${selectedBundesland} wurden hinzugefügt!`);
+                      }
+                    }}
+                    className="w-full px-4 py-2 text-white rounded hover:opacity-90"
+                    style={{background:'#B8E6D5', color:'#074D3B'}}
+                  >Ferien hinzufügen</button>
+<button
+  onClick={removeVacations}
+  className="w-full px-4 py-2 rounded border text-red-600 hover:bg-red-50 mt-2"
+  title="Alle eingetragenen Ferientermine dieses Jahres entfernen"
+>
+  Ferien entfernen
+</button>
+
+                </div>
+              </div>
+            )}
+
+            {/* Export-Dialog nach Erstellung */}
+            {exportEvent && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={()=>setExportEvent(null)}>
+                <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-4" onClick={(e)=>e.stopPropagation()}>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-bold text-lg">Zum Kalender hinzufügen?</h3>
+                    <button onClick={()=>setExportEvent(null)} className="text-gray-500 hover:text-gray-700"><X className="w-5 h-5"/></button>
+                  </div>
+                  <p className="text-sm text-gray-700 mb-4">
+                    „{exportEvent.title}“<br/>
+                    {exportEvent.startDate === exportEvent.endDate
+                      ? new Date(exportEvent.startDate).toLocaleDateString('de-DE', { day:'2-digit', month:'long', year:'numeric' })
+                      : `${new Date(exportEvent.startDate).toLocaleDateString('de-DE',{day:'2-digit',month:'long'})} – ${new Date(exportEvent.endDate).toLocaleDateString('de-DE',{day:'2-digit',month:'long',year:'numeric'})}`}
+                  </p>
+                  <div className="grid grid-cols-1 gap-2">
+                    <button onClick={()=>downloadIcs(exportEvent)} className="px-3 py-2 text-white rounded hover:opacity-90" style={{background:'#4A90E2'}}>.ics öffnen/ speichern (Apple/iCloud)</button>
+                    <button onClick={()=>openGoogle(exportEvent)} className="px-3 py-2 text-white rounded hover:opacity-90" style={{background:'#87C4A3'}}>Zu Google Calendar</button>
+                    <button onClick={()=>openOutlook(exportEvent)} className="px-3 py-2 text-white rounded hover:opacity-90" style={{background:'#9370DB'}}>Zu Outlook.com</button>
+                    <button onClick={()=>setExportEvent(null)} className="px-3 py-2 rounded border text-gray-700 hover:bg-gray-50">Fertig</button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Mehr-Menü */}
+            {showMoreMenu && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={()=>setShowMoreMenu(false)}>
+                <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-4" onClick={(e)=>e.stopPropagation()}>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-bold text-lg">Weitere Optionen</h3>
+                    <button onClick={()=>setShowMoreMenu(false)} className="text-gray-500 hover:text-gray-700"><X className="w-5 h-5"/></button>
+                  </div>
+                  <div className="grid grid-cols-1 gap-2">
+                    <button 
+                      onClick={()=>{ setShowMoreMenu(false); setShowVacationDialog(true); }}
+                      className="px-3 py-2 text-white rounded hover:opacity-90 text-left"
+                      style={{background:'#B8E6D5', color:'#074D3B'}}>
+                      🏖️ Schulferien hinzufügen
+                    </button>
+                    <button 
+                      onClick={()=>{ setShowMoreMenu(false); setShowHolidayDialog(true); }}
+                      className="px-3 py-2 text-white rounded hover:opacity-90 text-left"
+                      style={{background:'#FFD4B8', color:'#7A3E00'}}>
+                      🎉 Feiertage hinzufügen
+                    </button>
+                    <button 
+                      onClick={importBirthdaysFromLastYear}
+                      className="px-3 py-2 text-white rounded hover:opacity-90 text-left"
+                      style={{background:'#FF69B4'}}>
+                      🎂 Geburtstage aus Vorjahr übertragen
+                    </button>
+                    <button 
+                      onClick={()=>{ setShowMoreMenu(false); window.print(); }}
+                      className="px-3 py-2 text-white rounded hover:opacity-90 text-left"
+                      style={{background:'#4B5563'}}>
+                      🖨️ Kalender drucken
+                    </button>
+                    <button 
+                      onClick={() => setIsCompactView(!isCompactView)}
+                      className="px-3 py-2 rounded hover:opacity-90 text-left"
+                      style={{background:'#9CA3AF', color:'white'}}>
+                      🔍 Auflösung {isCompactView ? 'vergrößern' : 'verkleinern'}
+                    </button>
+                    <button 
+                      onClick={()=>setShowMoreMenu(false)} 
+                      className="px-3 py-2 rounded border text-gray-700 hover:bg-gray-50">
+                      Schließen
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* User-Auswahl Dialog */}
+            {showUserSelection && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6" onClick={(e)=>e.stopPropagation()}>
+                  <h3 className="font-bold text-xl mb-2">Willkommen beim OneYear Kalender!</h3>
+                  <p className="text-gray-600 mb-4">Bitte wähle deinen Namen aus:</p>
+                  <div className="grid grid-cols-1 gap-3">
+                    {['Jochen', 'Katja', 'Zoe'].map(name => (
+                      <button
+                        key={name}
+                        onClick={() => {
+                          setCurrentUser(name);
+                          setIsViewOnly(false);
+                          localStorage.setItem('oneyear_current_user', name);
+                          localStorage.setItem('oneyear_view_only', 'false');
+                          setShowUserSelection(false);
+                        }}
+                        className="px-4 py-3 text-lg font-semibold text-white rounded hover:opacity-90"
+                        style={{background:'#4A90E2'}}
+                      >
+                        {name}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => {
+                        setCurrentUser('Gast');
+                        setIsViewOnly(true);
+                        localStorage.setItem('oneyear_current_user', 'Gast');
+                        localStorage.setItem('oneyear_view_only', 'true');
+                        setShowUserSelection(false);
+                      }}
+                      className="px-4 py-3 text-lg font-semibold text-gray-700 rounded hover:opacity-90 border-2 border-gray-300"
+                      style={{background:'#F3F4F6'}}
+                    >
+                      🔒 Gast / Nur anschauen
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="text-center mt-4 text-gray-500 text-sm">© {currentYear} OneYear Kalender – Synchronisiert mit Firebase 🔥</div>
+          </div>
+        </div>
+      );
+    };
+
+    ReactDOM.render(<FamilyYearCalendar />, document.getElementById('root'));
+  </script>
+</body>
+</html>
