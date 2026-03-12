@@ -202,6 +202,42 @@
       return d.toISOString().slice(0,10);
     };
 
+    // ---------- Unterhaltsrechner ----------
+    function berechneUnterhalt(events, year, month) {
+      const EINKOMMEN_VATER = 1959.60;
+      const EINKOMMEN_MUTTER = 2700;
+      const TABELLENBEDARF = 554;
+      const KINDERGELD = 255;
+      const GEWICHT_EINKOMMEN = 0.5;
+      const GEWICHT_BETREUUNG = 0.5;
+
+      function toDate(d) { return new Date(d + "T00:00:00"); }
+      function daysBetween(a, b) { return Math.round((b - a) / 86400000); }
+
+      const startOfMonth = new Date(year, month - 1, 1);
+      const endOfMonth = new Date(year, month, 0);
+
+      let uebernachtungen = 0;
+      events.filter(e => e.type === "papazeit").forEach(event => {
+        let start = toDate(event.startDate);
+        let end = toDate(event.endDate);
+        if (start < startOfMonth) start = startOfMonth;
+        if (end > endOfMonth) end = endOfMonth;
+        const nights = daysBetween(start, end);
+        if (nights > 0) uebernachtungen += nights;
+      });
+
+      const tageImMonat = endOfMonth.getDate();
+      const betreuungsanteilPapa = uebernachtungen / tageImMonat;
+      const gesamtEinkommen = EINKOMMEN_VATER + EINKOMMEN_MUTTER;
+      const einkommenPapa = EINKOMMEN_VATER / gesamtEinkommen;
+      const quotePapa = einkommenPapa * GEWICHT_EINKOMMEN + betreuungsanteilPapa * GEWICHT_BETREUUNG;
+      const restbedarf = TABELLENBEDARF - KINDERGELD;
+      const unterhalt = Math.max(0, Math.round(restbedarf * quotePapa));
+
+      return { uebernachtungen, unterhalt, grundlage: `Restbedarf ${restbedarf}\u20AC \u00D7 Quote ${(quotePapa*100).toFixed(1)}%` };
+    }
+
     // ---------- Main Component ----------
     const FamilyYearCalendar = () => {
       const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
@@ -1486,7 +1522,7 @@
           <div className="lg:col-span-1">
             <div className="bg-white rounded-lg shadow-md p-3">
               <h2 className="text-lg font-bold mb-2 text-gray-800">Co-Parenting Statistik</h2>
-              <p className="text-xs text-gray-600 mb-3">Tage pro Monat mit Mama/Papa</p>
+              <p className="text-xs text-gray-600 mb-3">Tage pro Monat mit Mama/Papa + Unterhaltsberechnung</p>
               <div className="overflow-x-auto">
                 <table className="w-full text-xs">
                   <thead>
@@ -1494,6 +1530,7 @@
                       <th className="text-left py-2 font-semibold">Monat</th>
                       <th className="text-center py-2 font-semibold">👩🏻 Mama</th>
                       <th className="text-center py-2 font-semibold">👨🏼 Papa</th>
+                      <th className="text-center py-2 font-semibold">💶 Unterhalt</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1502,8 +1539,8 @@
                       const stats = [];
                       let totalMama = 0;
                       let totalPapa = 0;
+                      let totalUnterhalt = 0;
 
-                      // Berechne für jeden Monat
                       for (let m = 0; m < 12; m++) {
                         const daysInMonth = new Date(currentYear, m + 1, 0).getDate();
                         let mamaDays = 0;
@@ -1511,9 +1548,9 @@
 
                         for (let d = 1; d <= daysInMonth; d++) {
                           const dateKey = `${currentYear}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-                          const dayEvents = events.filter(e => 
-                            e.startDate <= dateKey && 
-                            e.endDate >= dateKey && 
+                          const dayEvents = events.filter(e =>
+                            e.startDate <= dateKey &&
+                            e.endDate >= dateKey &&
                             (e.type === 'mamazeit' || e.type === 'papazeit')
                           );
 
@@ -1521,7 +1558,6 @@
                           const hasPapa = dayEvents.some(e => e.type === 'papazeit');
 
                           if (hasMama && hasPapa) {
-                            // Beide = Übergabetag = je 0.5
                             mamaDays += 0.5;
                             papaDays += 0.5;
                           } else if (hasMama) {
@@ -1538,12 +1574,16 @@
                         const mamaPercent = monthTotal > 0 ? Math.round((mamaDays / monthTotal) * 100) : 0;
                         const papaPercent = monthTotal > 0 ? Math.round((papaDays / monthTotal) * 100) : 0;
 
+                        const uh = berechneUnterhalt(events, currentYear, m + 1);
+                        totalUnterhalt += uh.unterhalt;
+
                         stats.push({
                           month: months[m],
                           mama: mamaDays,
                           papa: papaDays,
                           mamaPercent,
-                          papaPercent
+                          papaPercent,
+                          unterhalt: uh
                         });
                       }
 
@@ -1576,6 +1616,19 @@
                                   <span className="text-gray-400">-</span>
                                 )}
                               </td>
+                              <td className="text-center py-2">
+                                {stat.unterhalt.uebernachtungen > 0 ? (
+                                  <details className="inline-block">
+                                    <summary className="cursor-pointer list-none">
+                                      <div className="font-semibold">{stat.unterhalt.unterhalt} €</div>
+                                      <div className="text-gray-500 text-xs">👨🏼 {stat.unterhalt.uebernachtungen} Nächte</div>
+                                    </summary>
+                                    <div className="text-gray-500 text-xs mt-1 p-1 bg-gray-50 rounded">{stat.unterhalt.grundlage}</div>
+                                  </details>
+                                ) : (
+                                  <span className="text-gray-400">-</span>
+                                )}
+                              </td>
                             </tr>
                           ))}
                           <tr className="border-t-2 font-bold bg-gray-50">
@@ -1590,6 +1643,12 @@
                               <div>
                                 <div>{totalPapa}</div>
                                 <div className="text-gray-600 text-xs">({yearPapaPercent}%)</div>
+                              </div>
+                            </td>
+                            <td className="text-center py-2">
+                              <div>
+                                <div>{totalUnterhalt} €</div>
+                                <div className="text-gray-600 text-xs">/ Jahr</div>
                               </div>
                             </td>
                           </tr>
